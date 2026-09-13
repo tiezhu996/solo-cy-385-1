@@ -23,13 +23,13 @@
     <section class="card">
       <h2>疫苗提醒</h2>
       <van-empty
-        v-if="!vaccines.length"
+        v-if="!sortedVaccines.length"
         image-size="90"
         :description="currentBaby ? '还没有疫苗计划，添加后这里会提醒' : '请先创建宝宝档案'"
       />
       <van-cell v-for="item in sortedVaccines" :key="item.id" :title="item.vaccineName" :value="item.plannedDate">
         <template #label>
-          <van-tag :type="statusTagType(item.status)">{{ item.status }}</van-tag>
+          <van-tag :type="statusTagType(statusOf(item))">{{ statusOf(item) }}</van-tag>
         </template>
       </van-cell>
     </section>
@@ -69,14 +69,27 @@ const ageText = computed(() => {
   return rest === 0 ? `${years} 岁` : `${years} 岁 ${rest} 个月`;
 });
 
+/** 优先使用服务端实时计算的分类；缺失时按计划日期与接种情况在前端兜底判断 */
+function statusOf(item: VaccineRecord): VaccineStatus {
+  if (item.status === '已接种' || item.status === '待接种' || item.status === '已逾期') {
+    return item.status;
+  }
+  if (item.completed) return '已接种';
+  if (item.plannedDate && new Date(item.plannedDate) < new Date(new Date().toDateString())) {
+    return '已逾期';
+  }
+  return '待接种';
+}
+
 const STATUS_ORDER: Record<VaccineStatus, number> = { '已逾期': 0, '待接种': 1, '已接种': 2 };
 
-const sortedVaccines = computed(() =>
-  [...vaccines.value].sort((a, b) => {
-    const diff = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-    return diff !== 0 ? diff : a.plannedDate.localeCompare(b.plannedDate);
-  })
-);
+const sortedVaccines = computed(() => {
+  if (!Array.isArray(vaccines.value)) return [];
+  return [...vaccines.value].sort((a, b) => {
+    const diff = STATUS_ORDER[statusOf(a)] - STATUS_ORDER[statusOf(b)];
+    return diff !== 0 ? diff : (a.plannedDate || '').localeCompare(b.plannedDate || '');
+  });
+});
 
 function statusTagType(status: VaccineStatus) {
   if (status === '已接种') return 'success';
@@ -89,7 +102,7 @@ async function loadVaccines(babyId: number) {
     vaccines.value = await fetchVaccines(babyId);
   } catch (e) {
     vaccines.value = [];
-    showToast('疫苗记录加载失败');
+    showToast(e instanceof Error ? e.message : '疫苗记录加载失败');
   }
 }
 
@@ -105,7 +118,7 @@ onMounted(async () => {
   try {
     babies.value = await fetchBabies();
   } catch (e) {
-    showToast('宝宝档案加载失败');
+    showToast(e instanceof Error ? e.message : '宝宝档案加载失败');
     return;
   }
   if (babies.value.length) {

@@ -3,6 +3,7 @@ dist/
 target/
 .env
 .DS_Store
+._*
 *.log
 .idea/
 *.iml

@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS vaccine_record (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  baby_id BIGINT NOT NULL,
+  vaccine_name VARCHAR(120) NOT NULL,
+  planned_date DATE NOT NULL,
+  completed BOOLEAN DEFAULT FALSE
+);
