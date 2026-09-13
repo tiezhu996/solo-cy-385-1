@@ -10,5 +10,5 @@ import java.util.List;
 public class FoodController {
     private final FoodService service;
     public FoodController(FoodService service) { this.service = service; }
-    @GetMapping("/recommend") public List<FoodRecipe> recommend(@RequestParam Integer monthAge, @RequestParam(required = false) String allergen) { return service.recommend(monthAge, allergen); }
+    @GetMapping("/recommend") public List<FoodRecipe> recommend(@RequestParam(name = "monthAge") Integer monthAge, @RequestParam(name = "allergen", required = false) String allergen) { return service.recommend(monthAge, allergen); }
 }
