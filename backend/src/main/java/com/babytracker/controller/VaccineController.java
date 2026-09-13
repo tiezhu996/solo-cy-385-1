@@ -10,6 +10,8 @@ import java.util.List;
 public class VaccineController {
     private final VaccineService service;
     public VaccineController(VaccineService service) { this.service = service; }
-    @GetMapping public List<VaccineRecord> schedule() { return service.schedule(); }
+    @GetMapping public List<VaccineRecord> schedule(@RequestParam(required = false) Long babyId) {
+        return babyId == null ? service.schedule() : service.scheduleByBaby(babyId);
+    }
     @PostMapping public VaccineRecord save(@RequestBody VaccineRecord record) { return service.save(record); }
 }
